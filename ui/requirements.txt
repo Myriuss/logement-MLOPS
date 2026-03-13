@@ -1,2 +1,7 @@
 streamlit
 requests
+plotly
+scikit-learn
+pandas
+numpy
+statsmodels
