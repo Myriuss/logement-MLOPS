@@ -1,5 +1,7 @@
-import streamlit as st
+import os
+
 import requests
+import streamlit as st
 
 st.set_page_config(page_title="Prédiction logement", page_icon="🏠")
 
@@ -10,9 +12,12 @@ surface = st.number_input("Surface (m²)", min_value=1.0, value=75.0)
 pieces = st.number_input("Nombre de pièces", min_value=1, value=3)
 distance_centre = st.number_input("Distance au centre (km)", min_value=0.0, value=5.0)
 etage = st.number_input("Étage", min_value=0, value=2)
-annee_construction = st.number_input("Année de construction", min_value=1900, max_value=2100, value=2015)
+annee_construction = st.number_input(
+    "Année de construction", min_value=1900, max_value=2100, value=2015
+)
 
-API_URL = "http://127.0.0.1:8000/predict"
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000/predict")
+st.caption(f"API utilisée : {API_URL}")
 
 if st.button("Prédire le prix"):
     payload = {
@@ -20,7 +25,7 @@ if st.button("Prédire le prix"):
         "pieces": pieces,
         "distance_centre": distance_centre,
         "etage": etage,
-        "annee_construction": annee_construction
+        "annee_construction": annee_construction,
     }
 
     try:

@@ -2,44 +2,55 @@ name: CI-CD MLOps Logement
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-  test-build:
+  ci:
+    name: Build, test and dockerize
     runs-on: ubuntu-latest
 
     steps:
-      - name: Récupération du code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Installation de Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Installation des dépendances
+      - name: Install root dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Entraîner et sauvegarder le modèle
-        run: |
-          python model/train.py
+      - name: Train model
+        run: python model/train.py
 
-      - name: Vérifier que le modèle existe
-        run: |
-          test -f model/model.joblib
+      - name: Check trained model exists
+        run: test -f model/model.joblib
 
-      - name: Vérifier que l'API se charge
-        run: |
-          python -c "from api.main import app; print(app.title)"
+      - name: Install API dependencies for import test
+        run: pip install -r api/requirements.txt
 
-      - name: Build Docker API
-        run: |
-          docker build -t mlops-logement-api -f Dockerfile.
+      - name: Verify API can load
+        run: python -c "from api.main import app; print(app.title)"
 
-      - name: Build Docker UI
-        run: |
-          docker build -t mlops-logement-ui -f Dockerfile.
+      - name: Build API Docker image
+        run: docker build -t mlops-logement-api:latest -f api/Dockerfile .
+
+      - name: Build UI Docker image
+        run: docker build -t mlops-logement-ui:latest -f ui/Dockerfile .
+
+  cd_ready:
+    name: Ready for AWS deployment
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: ci
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deployment preparation message
+        run: echo "Pipeline successful. Docker images are ready for a future deployment to AWS (ECR / ECS / EC2 / App Runner)."
